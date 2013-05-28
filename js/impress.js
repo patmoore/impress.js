@@ -281,6 +281,9 @@
                 triggerEvent(step, "impress:stepenter");
                 lastEntered = step;
             }
+			if(stepsData["impress-" + step.id].onenter != undefined){
+				eval('('+stepsData["impress-" + step.id].onenter+')();');
+			}
         };
         // `onStepGoto` is called whenever moving to a new step (as apposed to already entered)
         var onStepGoto = function (step) {
@@ -296,6 +299,9 @@
                 triggerEvent(step, "impress:stepleave", { nextStep: nextStep.el });
                 lastEntered = null;
             }
+			if(stepsData["impress-" + step.id].onexit != undefined){
+				eval('('+stepsData["impress-" + step.id].onexit+')();');
+			}
         };
         
         // `initStep` initializes given step element by reading data from its
