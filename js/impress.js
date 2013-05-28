@@ -293,7 +293,7 @@
         // last entered step.
         var onStepLeave = function (step) {
             if (lastEntered === step) {
-                triggerEvent(step, "impress:stepleave");
+                triggerEvent(step, "impress:stepleave", { nextStep: nextStep.el });
                 lastEntered = null;
             }
         };
