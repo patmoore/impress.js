@@ -326,6 +326,7 @@
                     },
                     scale: toNumber(data.scale, 1),
                     el: el,
+                    cls: data.cls ? data.cls.split(" ") : [],
                     substep: data.substep
                 };
             
