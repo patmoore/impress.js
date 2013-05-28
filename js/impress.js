@@ -458,11 +458,21 @@
             
             if ( activeStep ) {
                 activeStep.classList.remove("active");
+
+                // remove old css classes from body
                 body.classList.remove("impress-on-" + activeStep.id);
+                var oldStep = stepsData["impress-" + activeStep.id];
+                for (var i = 0; i < oldStep.cls.length; i++) {
+                    body.classList.remove(oldStep.cls[i]);
+                }
             }
             el.classList.add("active");
             
+            // add css classes to body
             body.classList.add("impress-on-" + el.id);
+            for (var i = 0; i < step.cls.length; i++) {
+                body.classList.add(step.cls[i]);
+            }
             
             // compute target state of the canvas based on given step
             var target = {
