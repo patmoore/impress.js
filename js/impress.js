@@ -314,7 +314,8 @@
                         z: toNumber(data.rotateZ || data.rotate)
                     },
                     scale: toNumber(data.scale, 1),
-                    el: el
+                    el: el,
+                    substep: data.substep
                 };
             
             if ( !el.id ) {
@@ -442,6 +443,17 @@
             // If you are reading this and know any better way to handle it, I'll be glad to hear about it!
             window.scrollTo(0, 0);
             
+            // If we're moving forward and there's actions to be done on this step before
+            // moving forward, let that action happen and stop if the action returns false
+            if( steps.indexOf( el ) > steps.indexOf( activeStep ) ) {
+              var active = getStep( activeStep );
+              var activeData = stepsData["impress-" + active.id];
+
+              if(activeData.substep && window.impressSubsteps && window.impressSubsteps[activeData.substep])
+                if(!window.impressSubsteps[activeData.substep](active, activeStep, activeData))
+                  return;
+            }
+
             var step = stepsData["impress-" + el.id];
             
             if ( activeStep ) {
@@ -632,7 +644,8 @@
             
             // START 
             // by selecting step defined in url or first step of the presentation
-            goto(getElementFromHash() || steps[0], 0);
+            activeStep = getElementFromHash() || steps[0];
+            goto(activeStep, 0);
         }, false);
         
         body.classList.add("impress-disabled");
@@ -805,3 +818,4 @@
 //
 // I've learnt a lot when building impress.js and I hope this code and comments
 // will help somebody learn at least some part of it.
+
