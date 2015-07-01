@@ -43,7 +43,7 @@ Feel free to add your own example presentations (or websites) there.
 If you want to learn even more there is a [list of tutorials and other learning resources](https://github.com/bartaz/impress.js/wiki/impress.js-tutorials-and-other-learning-resources)
 on the wiki, too.
 
-These is also a book available about [Building impressive presentations with impress.js](http://www.packtpub.com/building-impressive-presentations-with-impressjs/book) by Rakhitha Nimesh Ratnayake.
+There is also a book available about [Building impressive presentations with impress.js](http://www.packtpub.com/building-impressive-presentations-with-impressjs/book) by Rakhitha Nimesh Ratnayake.
 
 
 WANT TO CONTRIBUTE?
@@ -202,7 +202,7 @@ users](http://twitter.com/n_adam_stanley/status/178188611827679233) [are quite q
 
 #### UPGRADING FROM PREVIOUS VERSIONS
 
-Because API was introduced the way impress.js script is initialized was changed a bit. You not only has to include
+Because API was introduced the way impress.js script is initialized was changed a bit. You not only have to include
 `impress.js` script file, but also call `impress()` function.
 
 See the source of `index.html` for example and more details.
