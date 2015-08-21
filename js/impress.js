@@ -19,7 +19,7 @@
 /*jshint bitwise:true, curly:true, eqeqeq:true, forin:true, latedef:true, newcap:true,
          noarg:true, noempty:true, undef:true, strict:true, browser:true */
 
-// You are one of those who like to know how thing work inside?
+// You are one of those who like to know how things work inside?
 // Let me show you the cogs that make impress.js run...
 (function ( document, window ) {
     'use strict';
@@ -191,7 +191,7 @@
     
     // GLOBALS AND DEFAULTS
     
-    // This is were the root elements of all impress.js instances will be kept.
+    // This is where the root elements of all impress.js instances will be kept.
     // Yes, this means you can have more than one instance on a page, but I'm not
     // sure if it makes any sense in practice ;)
     var roots = {};
@@ -678,13 +678,38 @@
         var api = event.detail.api;
         
         // KEYBOARD NAVIGATION HANDLERS
+        // handle special casing
+        function isNavigationKeyAndPrevent(event) {
+            if ((event.srcElement.tagName === 'INPUT' || event.srcElement.tagName === 'TEXTAREA') && event.srcElement.disabled === false) {
+                switch (event.keyCode) {
+                case 33: // pg up
+                case 9: // tab or shift+tab
+                case 34: // pg down
+                    event.preventDefault();
+                    return true;
+                default:
+                    return false;
+                }
+            } else {
+                switch (event.keyCode) {
+                case 33: // pg up
+                case 37: // left
+                case 38: // up
+                case 9:  // tab
+                case 32: // space
+                case 34: // pg down
+                case 39: // right
+                case 40: // down
+                    event.preventDefault();
+                    return true;
+                default:
+                    return false;
+                }
+            }
+        }
         
         // Prevent default keydown action when one of supported key is pressed.
-        document.addEventListener("keydown", function ( event ) {
-            if ( event.keyCode === 9 || ( event.keyCode >= 32 && event.keyCode <= 34 ) || (event.keyCode >= 37 && event.keyCode <= 40) ) {
-                event.preventDefault();
-            }
-        }, false);
+        document.addEventListener("keydown", isNavigationKeyAndPrevent, false);
         
         // Trigger impress action (next or prev) on keyup.
         
@@ -702,23 +727,25 @@
         //   as another way to moving to next step... And yes, I know that for the sake of
         //   consistency I should add [shift+tab] as opposite action...
         document.addEventListener("keyup", function ( event ) {
-            if ( event.keyCode === 9 || ( event.keyCode >= 32 && event.keyCode <= 34 ) || (event.keyCode >= 37 && event.keyCode <= 40) ) {
-                switch( event.keyCode ) {
-                    case 33: // pg up
-                    case 37: // left
-                    case 38: // up
-                             api.prev();
-                             break;
-                    case 9:  // tab
-                    case 32: // space
-                    case 34: // pg down
-                    case 39: // right
-                    case 40: // down
-                             api.next();
-                             break;
+            if ( isNavigationKeyAndPrevent(event)) {
+                switch (event.keyCode) {
+                case 33: // pg up
+                case 37: // left
+                case 38: // up
+                    api.prev();
+                    break;
+                case 9:  // tab
+                    if (event.shiftKey) {
+                        api.prev();
+                        break;
+                    }
+                case 32: // space
+                case 34: // pg down
+                case 39: // right
+                case 40: // down
+                    api.next();
+                    break;
                 }
-                
-                event.preventDefault();
             }
         }, false);
         
