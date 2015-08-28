@@ -21,9 +21,13 @@
 
 // You are one of those who like to know how things work inside?
 // Let me show you the cogs that make impress.js run...
+impressjs = {
+    roots : {
+
+    }
+};
 (function ( document, window ) {
     'use strict';
-    
     // HELPER FUNCTIONS
     
     // `pfx` is a function that takes a standard CSS property name as a parameter
@@ -56,7 +60,7 @@
     
     })();
     
-    // `arraify` takes an array-like object and turns it into real Array
+    // `arrayify` takes an array-like object and turns it into real Array
     // to make all the Array.prototype goodness available.
     var arrayify = function ( a ) {
         return [].slice.call( a );
@@ -85,23 +89,28 @@
         return isNaN(numeric) ? (fallback || 0) : Number(numeric);
     };
     
-    // `byId` returns element with given `id` - you probably have guessed that ;)
-    var byId = function ( id ) {
-        return document.getElementById(id);
-    };
-    
     // `$` returns first element for given CSS `selector` in the `context` of
     // the given element or whole document.
     var $ = function ( selector, context ) {
-        context = context || document;
-        return context.querySelector(selector);
+        if ( !selector ) {
+            // empty string, null, undefined or anything else that is falsey
+            return null;
+        } else {
+            context = context || document;
+            return context.querySelector(selector);
+        }
     };
     
     // `$$` return an array of elements for given CSS `selector` in the `context` of
     // the given element or whole document.
     var $$ = function ( selector, context ) {
-        context = context || document;
-        return arrayify( context.querySelectorAll(selector) );
+        if ( !selector ) {
+            // empty string, null, undefined or anything else that is falsey
+            return null;
+        } else {
+            context = context || document;
+            return arrayify(context.querySelectorAll(selector));
+        }
     };
     
     // `triggerEvent` builds a custom DOM event with given `eventName` and `detail` data
@@ -141,9 +150,10 @@
     // `getElementFromHash` returns an element located by id from hash part of
     // window location.
     var getElementFromHash = function () {
-        // get id from url # by removing `#` or `#/` from the beginning,
+        // get id from url # by removing `#/` from the beginning,
         // so both "fallback" `#slide-id` and "enhanced" `#/slide-id` will work
-        return byId( window.location.hash.replace(/^#\/?/,"") );
+        var fragmentId = window.location.hash.replace(/^#\//,"#");
+        return $( fragmentId );
     };
     
     // `computeWindowScale` counts the scale factor between window size and size
@@ -238,31 +248,37 @@
             triggerEvent(previousSubstep, "impress:substep-enter");   
         }
     };
+    
+    var impressSupported;
+    var isImpressSupported = function() {
+        // CHECK SUPPORT - but need to wait until the document has had a chance to load.
+        if ( impressSupported !== undefined) {
+            return impressSupported;
+        }
+        var body = document.body;
 
-    
-    // CHECK SUPPORT
-    var body = document.body;
-    
-    var ua = navigator.userAgent.toLowerCase();
-    var impressSupported = 
-                          // browser should support CSS 3D transtorms 
-                           ( pfx("perspective") !== null ) &&
-                           
-                          // and `classList` and `dataset` APIs
-                           ( body.classList ) &&
-                           ( body.dataset ) &&
-                           
-                          // but some mobile devices need to be blacklisted,
-                          // because their CSS 3D support or hardware is not
-                          // good enough to run impress.js properly, sorry...
-                           ( ua.search(/(iphone)|(ipod)|(android)/) === -1 );
-    
-    if (!impressSupported) {
-        // we can't be sure that `classList` is supported
-        body.className += " impress-not-supported ";
-    } else {
-        body.classList.remove("impress-not-supported");
-        body.classList.add("impress-supported");
+        var ua = navigator.userAgent.toLowerCase();
+        impressSupported =!!(
+            // browser should support CSS 3D transtorms
+            ( pfx("perspective") !== null ) &&
+
+                // and `classList` and `dataset` APIs
+            ( body.classList ) &&
+            ( body.dataset ) &&
+
+                // but some mobile devices need to be blacklisted,
+                // because their CSS 3D support or hardware is not
+                // good enough to run impress.js properly, sorry...
+            ( ua.search(/(iphone)|(ipod)|(android)/) === -1 ));
+
+        if (!impressSupported) {
+            // we can't be sure that `classList` is supported
+            body.className += " impress-not-supported ";
+        } else {
+            body.classList.remove("impress-not-supported");
+            body.classList.add("impress-supported");
+        }
+        return impressSupported;
     }
     
     // GLOBALS AND DEFAULTS
@@ -293,12 +309,12 @@
     // It's the core `impress` function that returns the impress.js API
     // for a presentation based on the element with given id ('impress'
     // by default).
-    var impress = window.impress = function ( rootId ) {
+    var impress = window.impress = function ( impressRootSelector ) {
         
         // If impress.js is not supported by the browser return a dummy API
         // it may not be a perfect solution but we return early and avoid
         // running code that may use features not implemented in the browser.
-        if (!impressSupported) {
+        if (!isImpressSupported()) {
             return {
                 init: empty,
                 goto: empty,
@@ -307,11 +323,11 @@
             };
         }
         
-        rootId = rootId || "impress";
+        impressRootSelector = impressRootSelector || "#impress";
         
         // if given root is already initialized just return the API
-        if (roots["impress-root-" + rootId]) {
-            return roots["impress-root-" + rootId];
+        if (roots["impress-root-" + impressRootSelector]) {
+            return roots["impress-root-" + impressRootSelector];
         }
         
         // data of all presentation steps
@@ -333,9 +349,9 @@
         var windowScale = null;        
         
         // root presentation elements
-        var root = byId( rootId );
+        var root = $( impressRootSelector );
         var canvas = document.createElement("div");
-        
+        var body = document.body;
         var initialized = false;
         
         // STEP EVENTS
@@ -447,7 +463,7 @@
             
             // set initial styles
             document.documentElement.style.height = "100%";
-            
+
             css(body, {
                 height: "100%",
                 overflow: "hidden"
@@ -484,7 +500,7 @@
             
             initialized = true;
             
-            triggerEvent(root, "impress:init", { api: roots[ "impress-root-" + rootId ] });
+            triggerEvent(root, "impress:init", { api: roots[ "impress-root-" + impressRootSelector ] });
         };
         
         // `getStep` is a helper function that returns a step element defined by parameter.
@@ -495,7 +511,8 @@
             if (typeof step === "number") {
                 step = step < 0 ? steps[ steps.length + step] : steps[ step ];
             } else if (typeof step === "string") {
-                step = byId(step);
+                debugger;
+                step = $(step);
             }
             return (step && step.id && stepsData["impress-" + step.id]) ? step : null;
         };
@@ -523,7 +540,7 @@
             window.scrollTo(0, 0);
             
             var step = stepsData["impress-" + el.id];
-            
+
             if ( activeStep ) {
                 activeStep.classList.remove("active");
                 body.classList.remove("impress-on-" + activeStep.id);
@@ -708,7 +725,7 @@
             // scrolling to element in hash.
             //
             // And it has to be set after animation finishes, because in Chrome it
-            // makes transtion laggy.
+            // makes transition laggy.
             // BUG: http://code.google.com/p/chromium/issues/detail?id=62820
             root.addEventListener("impress:stepenter", function (event) {
                 window.location.hash = lastHash = "#/" + event.target.id;
@@ -733,7 +750,7 @@
         body.classList.add("impress-disabled");
         
         // store and return API for given impress.js root element
-        return (roots[ "impress-root-" + rootId ] = {
+        return (roots[ "impress-root-" + impressRootSelector ] = {
             init: init,
             goto: goto,
             next: next,
@@ -744,7 +761,6 @@
     
     // flag that can be used in JS to check if browser have passed the support test
     impress.supported = impressSupported;
-    
 })(document, window);
 
 // NAVIGATION EVENTS
@@ -782,7 +798,7 @@
         // KEYBOARD NAVIGATION HANDLERS
         // handle special casing
         function isNavigationKeyAndPrevent(event) {
-            if ((event.srcElement.tagName === 'INPUT' || event.srcElement.tagName === 'TEXTAREA') && event.srcElement.disabled === false) {
+            if ((event.srcElement.tagName === 'SELECT' || event.srcElement.tagName === 'INPUT' || event.srcElement.tagName === 'TEXTAREA') && event.srcElement.disabled === false) {
                 switch (event.keyCode) {
                 case 33: // pg up
                 case 9: // tab or shift+tab
@@ -917,7 +933,6 @@
         }, 250), false);
         
     }, false);
-        
 })(document, window);
 
 // THAT'S ALL FOLKS!
