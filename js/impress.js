@@ -21,11 +21,6 @@
 
 // You are one of those who like to know how things work inside?
 // Let me show you the cogs that make impress.js run...
-impressjs = {
-    roots : {
-
-    }
-};
 (function ( document, window ) {
     'use strict';
     // HELPER FUNCTIONS
@@ -264,13 +259,13 @@ impressjs = {
 
                 // and `classList` and `dataset` APIs
             ( body.classList ) &&
-            ( body.dataset ) &&
+            ( body.dataset )
 
                 // but some mobile devices need to be blacklisted,
                 // because their CSS 3D support or hardware is not
                 // good enough to run impress.js properly, sorry...
-            ( ua.search(/(iphone)|(ipod)|(android)/) === -1 ));
-
+            //&& ( ua.search(/(iphone)|(ipod)|(android)/) === -1 )
+        );
         if (!impressSupported) {
             // we can't be sure that `classList` is supported
             body.className += " impress-not-supported ";
