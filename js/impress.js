@@ -114,6 +114,7 @@
         var event = document.createEvent("CustomEvent");
         event.initCustomEvent(eventName, true, true, detail);
         el.dispatchEvent(event);
+        return event;
     };
     
     // `translate` builds a translate transform string for given data.
@@ -379,6 +380,16 @@
                 lastEntered = null;
             }
         };
+
+        var onStepLeaveVetoCheck = function onStepLeaveVetoCheck(step) {
+            if (lastEntered === step) {
+                var event = triggerEvent(step, "impress:stepleaveveto");
+                lastEntered = null;
+                return event.veto;
+            } else {
+                return false;
+            }
+        };
         
         // `initStep` initializes given step element by reading data from its
         // data attributes and setting correct styles.
@@ -523,7 +534,14 @@
                 // presentation not initialized or given element is not a step
                 return false;
             }
-            
+            if (activeStep && activeStep !== el) {
+                var veto = onStepLeaveVetoCheck(activeStep);
+                if ( veto ) {
+                    // leaving this step was vetoed.
+                    return false;
+                }
+            }
+
             // Sometimes it's possible to trigger focus on first link with some keyboard action.
             // Browser in such a case tries to scroll the page to make this element visible
             // (even that body overflow is set to hidden) and it breaks our careful positioning.
