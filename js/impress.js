@@ -595,12 +595,12 @@
             }
             
             var targetScale = target.scale * windowScale;
-            
+
             // trigger leave of currently active element (if it's not the same step again)
             if (activeStep && activeStep !== el) {
                 onStepLeave(activeStep);
             }
-            
+
             // Now we alter transforms of `root` and `canvas` to trigger transitions.
             //
             // And here is why there are two elements: `root` and `canvas` - they are
@@ -672,11 +672,11 @@
                 // substepBackward. This is not exposed in API
                 // because substeps cannot be deep linked
                 substepBackward(activeStep);
-            } else  {
+            } else {
                 // when no present substep goto previous step
-            var prev = steps.indexOf( activeStep ) - 1;
-            prev = prev >= 0 ? steps[ prev ] : steps[ steps.length-1 ];
-            return goto(prev);
+                var prev = steps.indexOf(activeStep) - 1;
+                prev = prev >= 0 ? steps[prev] : steps[steps.length - 1];
+                return goto(prev);
             }
         };
         
@@ -689,9 +689,9 @@
                 substepForward(activeStep);
             } else {
                 // when no future substeps are available goto next step
-            var next = steps.indexOf( activeStep ) + 1;
-            next = next < steps.length ? steps[ next ] : steps[ 0 ];
-            return goto(next);
+                var next = steps.indexOf(activeStep) + 1;
+                next = next < steps.length ? steps[next] : steps[0];
+                return goto(next);
             }
         };
         
