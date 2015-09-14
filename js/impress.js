@@ -384,7 +384,6 @@
         var onStepLeaveVetoCheck = function onStepLeaveVetoCheck(step) {
             if (lastEntered === step) {
                 var event = triggerEvent(step, "impress:stepleaveveto");
-                lastEntered = null;
                 return event.veto;
             } else {
                 return false;
