@@ -80,8 +80,19 @@
     // `toNumber` takes a value given as `numeric` parameter and tries to turn
     // it into a number. If it is not possible it returns 0 (or other value
     // given as `fallback`).
+    // fallback can be a function for delayed evaluation ( or no evaluation if not needed )
     var toNumber = function (numeric, fallback) {
-        return isNaN(numeric) ? (fallback || 0) : Number(numeric);
+        var value;
+        if ( isNaN(numeric)) {
+            if ( typeof fallback === "function") {
+                value = fallback();
+            } else {
+                value = fallback || 0;
+            }
+        } else {
+            value = numeric;
+        }
+        return Number(value);
     };
     
     // `$` returns first element for given CSS `selector` in the `context` of
