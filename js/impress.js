@@ -357,6 +357,10 @@
         
         // root presentation elements
         var root = $( impressRootSelector );
+        if ( root == null) {
+            throw new Error("No element found that matches selector: "+impressRootSelector);
+        }
+        // TODO : we need to assign the canvas for each presentation.
         var canvas = document.createElement("div");
         var body = document.body;
         var initialized = false;
