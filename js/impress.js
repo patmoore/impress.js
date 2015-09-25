@@ -367,10 +367,14 @@
         
         // STEP EVENTS
         //
-        // There are currently two step events triggered by impress.js
-        // `impress:stepenter` is triggered when the step is shown on the 
+        // Events triggered by impress.js
+        // 1. `impress:stepenter` is triggered when the step is shown on the
         // screen (the transition from the previous one is finished) and
-        // `impress:stepleave` is triggered when the step is left (the
+        //
+        // 2. 'impress:stepleaveveto` is triggered when the step is going to be left. if the event.veto = truthy value
+        // then leave has been rejected and the event.veto is the reason for rejection.
+        //
+        // 3. `impress:stepleave` is triggered when the step is left (the
         // transition to next step just starts).
         
         // reference to last entered step
@@ -450,11 +454,15 @@
         };
         
         // `init` API function that initializes (and runs) the presentation.
-        var init = function () {
-            if (initialized) { return; }
+        var init = function (restart) {
+            if (initialized && !restart) {
+                return;
+            }
             
             // First we set up the viewport for mobile devices.
             // For some reason iPad goes nuts when it is not done properly.
+            // TODO: what happens if 2 impress presentations are running at the same time?
+            // TODO: does this imply that we need to iframe to keep things separate?
             var meta = $("meta[name='viewport']") || document.createElement("meta");
             meta.content = "width=device-width, minimum-scale=1, maximum-scale=1, user-scalable=no";
             if (meta.parentNode !== document.head) {
@@ -481,7 +489,8 @@
             });
             root.appendChild(canvas);
             
-            // set initial styles
+            // set initial styles ( html and body - both must have 100% of the viewport )
+            // this should be safe to apply as a default style to the body.(I think)
             document.documentElement.style.height = "100%";
 
             css(body, {
