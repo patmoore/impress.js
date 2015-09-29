@@ -235,8 +235,6 @@
         triggerEvent(nextSubstep, "impress:substep-enter");
     }
 
-
-
     // helper for navigation back a substep
     var substepBackward = function (element) {
         var presentSubstep = getPresentSubstep(element);
@@ -293,6 +291,7 @@
     // This is where the root elements of all impress.js instances will be kept.
     // Yes, this means you can have more than one instance on a page, but I'm not
     // sure if it makes any sense in practice ;)
+    // indexed by the id of the presentation.
     var roots = {};
     
     // some default config values.
