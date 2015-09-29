@@ -295,7 +295,7 @@
     var roots = {};
     
     // some default config values.
-    var defaults = {
+    var globalDefaults = {
         width: 1024,
         height: 768,
         maxScale: 1,
@@ -315,8 +315,18 @@
     // It's the core `impress` function that returns the impress.js API
     // for a presentation based on the element with given id ('impress'
     // by default).
-    var impress = window.impress = function ( impressRootSelector ) {
-        
+    var impress = window.impress = function ( options ) {
+        // root presentation elements
+        var impressRootSelector;
+        var defaults;
+        if ( typeof options ==='string' || options == null) {
+            impressRootSelector = options || '#impress';
+            defaults = globalDefaults;
+        } else {
+            impressRootSelector = options.selector || '#impress';
+            // TODO : really should merge so that defaults can be partially overwritten
+            defaults = options.defaults || globalDefaults;
+        }
         // If impress.js is not supported by the browser return a dummy API
         // it may not be a perfect solution but we return early and avoid
         // running code that may use features not implemented in the browser.
@@ -399,9 +409,9 @@
             }
         };
 
-        var onStepLeaveVetoCheck = function onStepLeaveVetoCheck(step) {
-            if (lastEntered === step) {
-                var event = triggerEvent(step, "impress:stepleaveveto");
+        var onStepLeaveVetoCheck = function onStepLeaveVetoCheck(options) {
+            if (lastEntered === options.activeStep && lastEntered !== options.nextStep) {
+                var event = triggerEvent(options.activeStep, "impress:stepleaveveto", options);
                 return event.veto;
             } else {
                 return false;
@@ -598,19 +608,30 @@
         
         // `goto` API function that moves to step given with `el` parameter (by index, id or element),
         // with a transition `duration` optionally given as second parameter.
-        var goto = function ( el, duration ) {
-            
+        var goto = function ( el, options ) {
+            var duration;
+            if ( typeof options === 'number') {
+                duration = options;
+            } else {
+                options = options || {};
+                duration = options.duration;
+            }
             if ( !initialized || !(el = getStep(el)) ) {
                 // presentation not initialized or given element is not a step
                 return false;
             }
             if (activeStep && activeStep !== el) {
-                var veto = onStepLeaveVetoCheck(activeStep);
+                var veto = onStepLeaveVetoCheck({activeStep:activeStep, nextStep: el});
                 if ( veto ) {
                     // leaving this step was vetoed.
+                    // make sure that we force the window location back to the correct id.
+                    console.error("Vetoed going to step ", el, "because", veto);
+                    // force back to the original step
+                    window.location.hash = lastHash = "#/" +activeStep;
                     return false;
                 }
             }
+
 
             // Sometimes it's possible to trigger focus on first link with some keyboard action.
             // Browser in such a case tries to scroll the page to make this element visible
@@ -841,7 +862,7 @@
             
             // START 
             // by selecting step defined in url or first step of the presentation
-            goto(getElementFromHash() || steps[0], 0);
+            goto(getElementFromHash() || steps[0], {duration:0});
         }, false);
         
         body.classList.add("impress-disabled");
@@ -1026,7 +1047,7 @@
         // rescale presentation when window is resized
         window.addEventListener("resize", throttle(function () {
             // force going to active step again, to trigger rescaling
-            api.goto( document.querySelector(".step.active"), 500 );
+            api.goto( document.querySelector(".step.active"), {duration:500} );
         }, 250), false);
         
     }, false);
