@@ -408,38 +408,85 @@
                 return false;
             }
         };
+        // END STEP EVENTS
         
         // `initStep` initializes given step element by reading data from its
         // data attributes and setting correct styles.
         var initStep = function ( el, idx ) {
-            var data = el.dataset,
-                step = {
-                    translate: {
-                        x: toNumber(data.x),
-                        y: toNumber(data.y),
-                        z: toNumber(data.z)
-                    },
-                    rotate: {
-                        x: toNumber(data.rotateX),
-                        y: toNumber(data.rotateY),
-                        z: toNumber(data.rotateZ || data.rotate)
-                    },
-                    scale: toNumber(data.scale, 1),
-                    el: el
-                };
-            
+            var data = el.dataset;
+            var stepData = {
+                translate: {},
+                rotate: {},
+                el: el
+            };
+            //get the positioning and transformation information from the current element's dataset or from the previous step's
+            // configuration. This allows for easier "next-to" / "below" defaulting.
+            var thisOrPrev = function(transformName, axisName, dataNames, defaultValue) {
+                var value;
+                if ( dataNames == null) {
+                    value = data[axisName || transformName];
+                } else {
+                    for(var i = 0; i < dataNames.length; i++) {
+                        value = data[dataNames[i]];
+                        if ( value !== null && value !== undefined) {
+                            break;
+                        }
+                    }
+                }
+                var result = toNumber(value, function() {
+                    var prevStepElement = getPrevStep(el, true);
+                    var fallback;
+                    if (prevStepElement) {
+                        debugger;
+                        var prevStepData = stepsData['impress-'+prevStepElement.id];
+                        fallback = axisName?prevStepData[transformName][axisName]:prevStepData[transformName];
+                    } else {
+                        //TODO get from template
+                        fallback = defaultValue || 0;
+                    }
+                    return fallback;
+                });
+                return result;
+            }
+            Object.defineProperties(stepData.translate, {
+                x: {
+                    'get': thisOrPrev.bind(stepData, 'translate', 'x')
+                },
+                y: {
+                    'get': thisOrPrev.bind(stepData, 'translate', 'y')
+                },
+                z: {
+                    'get': thisOrPrev.bind(stepData, 'translate', 'z')
+                }
+            });
+            Object.defineProperties(stepData.rotate, {
+                x: {
+                    'get': thisOrPrev.bind(stepData, 'rotate', 'x', ['rotateX'])
+                },
+                y: {
+                    'get': thisOrPrev.bind(stepData, 'rotate', 'y', ['rotateY'])
+                },
+                z: {
+                    'get': thisOrPrev.bind(stepData, 'rotate', 'z', ['rotateZ', 'rotate'])
+                }
+            });
+            Object.defineProperties(stepData, {
+                'scale' : {
+                    'get': thisOrPrev.bind(stepData, 'scale', null, null, 1)
+                }
+            });
             if ( !el.id ) {
                 el.id = "step-" + (idx + 1);
             }
             
-            stepsData["impress-" + el.id] = step;
+            stepsData["impress-" + el.id] = stepData;
             
             css(el, {
                 position: "absolute",
                 transform: "translate(-50%,-50%)" +
-                           translate(step.translate) +
-                           rotate(step.rotate) +
-                           scale(step.scale),
+                           translate(stepData.translate) +
+                           rotate(stepData.rotate) +
+                           scale(stepData.scale),
                 transformStyle: "preserve-3d"
             });
 
@@ -451,6 +498,7 @@
                     }
                 );
             }
+            return stepData;
         };
         
         // `init` API function that initializes (and runs) the presentation.
@@ -575,7 +623,7 @@
             // If you are reading this and know any better way to handle it, I'll be glad to hear about it!
             window.scrollTo(0, 0);
             
-            var step = stepsData["impress-" + el.id];
+            var stepData = stepsData["impress-" + el.id];
 
             if ( activeStep ) {
                 activeStep.classList.remove("active");
@@ -588,16 +636,16 @@
             // compute target state of the canvas based on given step
             var target = {
                 rotate: {
-                    x: -step.rotate.x,
-                    y: -step.rotate.y,
-                    z: -step.rotate.z
+                    x: -stepData.rotate.x,
+                    y: -stepData.rotate.y,
+                    z: -stepData.rotate.z
                 },
                 translate: {
-                    x: -step.translate.x,
-                    y: -step.translate.y,
-                    z: -step.translate.z
+                    x: -stepData.translate.x,
+                    y: -stepData.translate.y,
+                    z: -stepData.translate.z
                 },
-                scale: 1 / step.scale
+                scale: 1 / stepData.scale
             };
             
             // Check if the transition is zooming in or not.
@@ -689,7 +737,6 @@
         // `prev` API function goes to previous step (in document order)
         // or backs up one stubstep if a present substep is found
         var prev = function () {
-
             if (getPresentSubstep(activeStep)) {
                 // if this step has a substep in present state
                 // substepBackward. This is not exposed in API
@@ -702,7 +749,22 @@
                 return goto(prev);
             }
         };
-        
+        var getPrevStep = function(currentStep, dontWrap) {
+            debugger;
+            var previousSubstep = getPreviousSubstep(currentStep);
+            if ( previousSubstep ) {
+                return previousSubstep;
+            } else {
+                var prev = steps.indexOf(currentStep) - 1;
+                var prevStep;
+                if ( prev >= 0 ) {
+                    prevStep = steps[prev];
+                } else if (dontWrap !== true) {
+                    prevStep = steps[steps.length - 1];
+                }
+                return prevStep;
+            }
+        }
         // `next` API function goes to next step (in document order)
         var next = function () {
             if (getNextSubstep(activeStep)) {
