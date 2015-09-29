@@ -76,6 +76,26 @@
         }
         return el;
     };
+
+    // convert 'inherit-rotate-x' to 'inheritRotateX' to look up in dataset
+    // see https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dataset
+    var dataKey = function(dashedDataKey) {
+        var dataKey;
+        if ( dashedDataKey ) {
+            dataKey = dashedDataKey.replace(/-[a-z]/g, function (letter) {
+                return letter[1].toUpperCase();
+            });
+        }
+        return dataKey;
+    };
+    var findData = function(data, dashedDataKey) {
+        var dataKeyValue = dataKey(dashedDataKey);
+        if ( dataKeyValue ) {
+            return data[dataKeyValue];
+        } else {
+            return null;
+        }
+    }
     
     // `toNumber` takes a value given as `numeric` parameter and tries to turn
     // it into a number. If it is not possible it returns 0 (or other value
@@ -433,22 +453,45 @@
             var thisOrPrev = function(transformName, axisName, dataNames, defaultValue) {
                 var value;
                 if ( dataNames == null) {
-                    value = data[axisName || transformName];
+                    value = findData(data, axisName || transformName);
                 } else {
                     for(var i = 0; i < dataNames.length; i++) {
-                        value = data[dataNames[i]];
+                        value = findData(data, dataNames[i]);
                         if ( value !== null && value !== undefined) {
                             break;
                         }
                     }
                 }
-                var result = toNumber(value, function() {
-                    var prevStepElement = getPrevStep(el, true);
+                // NOTE: the element we are inheriting impress config from does not have to be a step or even visible.
+                var result = toNumber(value, function inheritFromDefault() {
+                    var inheritFromSelector;
+                    if ( axisName ) {
+                        inheritFromSelector = findData(data,'inherit-'+transformName+'-'+axisName);
+                    }
+                    if ( !inheritFromSelector && transformName === 'translate' ) {
+                        // special case to allow data-inherit-x, data-inherit-y
+                        inheritFromSelector = findData(data,'inherit-'+axisName);
+                    }
+                    if ( !inheritFromSelector ) {
+                        inheritFromSelector = findData(data,'inherit-'+transformName) || findData(data,'inherit');
+                    }
+
+                    var inheritFromElement;
+                    if ( inheritFromSelector ==='prev') {
+                        // inherit from the previous step.
+                        inheritFromElement = getPrevStep(el, true);
+                    }
+                    if ( inheritFromSelector ) {
+                        inheritFromElement = $(inheritFromSelector, presentationRoot);
+                    }
+                    if ( inheritFromSelector && !inheritFromElement ) {
+                        console.warn("No element selected that matches selector: ", inheritFromSelector);
+                    }
+
                     var fallback;
-                    if (prevStepElement) {
-                        debugger;
-                        var prevStepData = stepsData['impress-'+prevStepElement.id];
-                        fallback = axisName?prevStepData[transformName][axisName]:prevStepData[transformName];
+                    if (inheritFromElement) {
+                        var inheritFromStepData = stepsData['impress-'+inheritFromElement.id];
+                        fallback = axisName?inheritFromStepData[transformName][axisName]:inheritFromStepData[transformName];
                     } else {
                         //TODO get from template
                         fallback = defaultValue || 0;
