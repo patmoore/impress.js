@@ -62,19 +62,19 @@
     };
     
     // `css` function applies the styles given in `props` object to the element
-    // given as `el`. It runs all property names through `pfx` function to make
+    // given as `stepElement`. It runs all property names through `pfx` function to make
     // sure proper prefixed version of the property is used.
-    var css = function ( el, props ) {
+    var css = function ( stepElement, props ) {
         var key, pkey;
         for ( key in props ) {
             if ( props.hasOwnProperty(key) ) {
                 pkey = pfx(key);
                 if ( pkey !== null ) {
-                    el.style[pkey] = props[key];
+                    stepElement.style[pkey] = props[key];
                 }
             }
         }
-        return el;
+        return stepElement;
     };
 
     // convert 'inherit-rotate-x' to 'inheritRotateX' to look up in dataset
@@ -140,11 +140,11 @@
     };
     
     // `triggerEvent` builds a custom DOM event with given `eventName` and `detail` data
-    // and triggers it on element given as `el`.
-    var triggerEvent = function (el, eventName, detail) {
+    // and triggers it on element given as `stepElement`.
+    var triggerEvent = function (stepElement, eventName, detail) {
         var event = document.createEvent("CustomEvent");
         event.initCustomEvent(eventName, true, true, detail);
-        el.dispatchEvent(event);
+        stepElement.dispatchEvent(event);
         return event;
     };
     
@@ -441,12 +441,13 @@
         
         // `initStep` initializes given step element by reading data from its
         // data attributes and setting correct styles.
-        var initStep = function ( el, idx ) {
-            var data = el.dataset;
+        var initStep = function ( stepElement, idx ) {
+            var data = stepElement.dataset;
             var stepData = {
                 translate: {},
                 rotate: {},
-                el: el
+                stepElement: stepElement,
+                index: idx
             };
             //get the positioning and transformation information from the current element's dataset or from the previous step's
             // configuration. This allows for easier "next-to" / "below" defaulting.
@@ -479,7 +480,7 @@
                     var inheritFromElement;
                     if ( inheritFromSelector ==='prev') {
                         // inherit from the previous step.
-                        inheritFromElement = getPrevStep(el, true);
+                        inheritFromElement = getPrevStep(stepElement, true);
                     }
                     if ( inheritFromSelector ) {
                         inheritFromElement = $(inheritFromSelector, presentationRoot);
@@ -527,13 +528,13 @@
                     'get': thisOrPrev.bind(stepData, 'scale', null, null, 1)
                 }
             });
-            if ( !el.id ) {
-                el.id = "step-" + (idx + 1);
+            if ( !stepElement.id ) {
+                stepElement.id = "step-" + (idx + 1);
             }
             
-            stepsData["impress-" + el.id] = stepData;
+            stepsData["impress-" + stepElement.id] = stepData;
             
-            css(el, {
+            css(stepElement, {
                 position: "absolute",
                 transform: "translate(-50%,-50%)" +
                            translate(stepData.translate) +
@@ -543,8 +544,8 @@
             });
 
             // need to prepare substeps with 'future'
-            if (getSubsteps(el).length > 0) {
-                getSubsteps(el).forEach(
+            if (getSubsteps(stepElement).length > 0) {
+                getSubsteps(stepElement).forEach(
                     function(substep){
                         substep.classList.add("future");
                     }
@@ -584,8 +585,8 @@
             windowScale = computeWindowScale( config );
             
             // wrap steps with "canvas" element
-            arrayify( root.childNodes ).forEach(function ( el ) {
-                canvas.appendChild( el );
+            arrayify( root.childNodes ).forEach(function ( stepElement ) {
+                canvas.appendChild( stepElement );
             });
             root.appendChild(canvas);
             
@@ -649,9 +650,9 @@
         // used to reset timeout for `impress:stepenter` event
         var stepEnterTimeout = null;
         
-        // `goto` API function that moves to step given with `el` parameter (by index, id or element),
+        // `goto` API function that moves to step given with `stepElement` parameter (by index, id or element),
         // with a transition `duration` optionally given as second parameter.
-        var goto = function ( el, options ) {
+        var goto = function ( stepElement, options ) {
             var duration;
             if ( typeof options === 'number') {
                 duration = options;
@@ -659,16 +660,16 @@
                 options = options || {};
                 duration = options.duration;
             }
-            if ( !initialized || !(el = getStep(el)) ) {
+            if ( !initialized || !(stepElement = getStep(stepElement)) ) {
                 // presentation not initialized or given element is not a step
                 return false;
             }
-            if (activeStep && activeStep !== el) {
-                var veto = onStepLeaveVetoCheck({activeStep:activeStep, nextStep: el});
+            if (activeStep && activeStep !== stepElement) {
+                var veto = onStepLeaveVetoCheck({activeStep:activeStep, nextStep: stepElement});
                 if ( veto ) {
                     // leaving this step was vetoed.
                     // make sure that we force the window location back to the correct id.
-                    console.error("Vetoed going to step ", el, "because", veto);
+                    console.error("Vetoed going to step ", stepElement, "because", veto);
                     // force back to the original step
                     window.location.hash = lastHash = "#/" +activeStep;
                     return false;
@@ -686,15 +687,15 @@
             // If you are reading this and know any better way to handle it, I'll be glad to hear about it!
             window.scrollTo(0, 0);
             
-            var stepData = stepsData["impress-" + el.id];
+            var stepData = stepsData["impress-" + stepElement.id];
 
             if ( activeStep ) {
                 activeStep.classList.remove("active");
                 body.classList.remove("impress-on-" + activeStep.id);
             }
-            el.classList.add("active");
-            
-            body.classList.add("impress-on-" + el.id);
+            stepElement.classList.add("active");
+
+            body.classList.add("impress-on-" + stepElement.id);
             
             // compute target state of the canvas based on given step
             var target = {
@@ -724,14 +725,14 @@
             
             // if the same step is re-selected, force computing window scaling,
             // because it is likely to be caused by window resize
-            if (el === activeStep) {
+            if (stepElement === activeStep) {
                 windowScale = computeWindowScale(config);
             }
             
             var targetScale = target.scale * windowScale;
 
             // trigger leave of currently active element (if it's not the same step again)
-            if (activeStep && activeStep !== el) {
+            if (activeStep && activeStep !== stepElement) {
                 onStepLeave(activeStep);
             }
 
@@ -775,7 +776,7 @@
             
             // store current state
             currentState = target;
-            activeStep = el;
+            activeStep = stepElement;
             
             // And here is where we trigger `impress:stepenter` event.
             // We simply set up a timeout to fire it taking transition duration (and possible delay) into account.
@@ -794,7 +795,7 @@
                 onStepEnter(activeStep);
             }, duration + delay);
             
-            return el;
+            return stepElement;
         };
         
         // `prev` API function goes to previous step (in document order)
