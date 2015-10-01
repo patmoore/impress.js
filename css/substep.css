@@ -149,7 +149,7 @@ ul.boring-list {
   information overload text on the 
   non-substep example
 */
-#non-substeps.present .overload {
+#or-not.present .overload {
   display: inline-block;
   -webkit-animation-timing-function: ease-out;
   -webkit-animation: shazam 5s;
