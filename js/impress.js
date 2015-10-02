@@ -640,7 +640,6 @@
             if (typeof step === "number") {
                 stepElement = step < 0 ? steps[ steps.length + step] : steps[ step ];
             } else if (typeof step === "string") {
-                debugger;
                 stepElement = $(step);
             }
             return (stepElement && stepElement.id && stepsData["impress-" + stepElement.id]) ? stepElement : null;
