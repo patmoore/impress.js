@@ -544,13 +544,11 @@
             });
 
             // need to prepare substeps with 'future'
-            if (getSubsteps(stepElement).length > 0) {
-                getSubsteps(stepElement).forEach(
-                    function(substep){
-                        substep.classList.add("future");
-                    }
-                );
-            }
+            getSubsteps(stepElement).forEach(
+                function(substep) {
+                    substep.classList.add("future");
+                }
+            );
             return stepData;
         };
         
