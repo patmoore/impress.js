@@ -799,7 +799,7 @@
         
         // `prev` API function goes to previous step (in document order)
         // or backs up one stubstep if a present substep is found
-        var prev = function () {
+        var prev = function (options) {
             if (getPresentSubstep(activeStep)) {
                 // if this step has a substep in present state
                 // substepBackward. This is not exposed in API
@@ -829,7 +829,7 @@
             }
         }
         // `next` API function goes to next step (in document order)
-        var next = function () {
+        var next = function (options) {
             if (getNextSubstep(activeStep)) {
                 // if a future substep is found in this step
                 // substepForward.  This is not exposed in API 
@@ -857,7 +857,7 @@
         // There classes can be used in CSS to style different types of steps.
         // For example the `present` class can be used to trigger some custom
         // animations when step is shown.
-        root.addEventListener("impress:init", function(){
+        root.addEventListener("impress:init", function(event){
             // STEP CLASSES
             steps.forEach(function (step) {
                 step.classList.add("future");
