@@ -323,8 +323,23 @@
         
         perspective: 1000,
         
-        transitionDuration: 1000
+        transitionDuration: 1000,
+        stepSelectors: ['.impress-step', '.step', '[data-impress-step]']
     };
+    var getImpressDataAttributes = function() {
+        // may be programatically determined by adding a prefix
+        var impressAttributes = ['class'];
+        var base= ['x', 'y', 'z',
+            'translate-x', 'translate-y', 'translate-z',
+            'rotate-x', 'rotate-y', 'rotate-z',
+            'scale'
+        ];
+        for(var i = 0; i < base.length; i++) {
+            impressAttributes.push('data-'+base[i]);
+            impressAttributes.push('data-inherit-'+base[i]);
+        }
+        return impressAttributes;
+    }
     
     // it's just an empty function ... and a useless comment.
     var empty = function () { return false; };
@@ -442,7 +457,10 @@
         // `initStep` initializes given step element by reading data from its
         // data attributes and setting correct styles.
         var initStep = function ( stepElement, idx ) {
-            var data = stepElement.dataset;
+            if ( !stepElement.id ) {
+                stepElement.id = "step-" + (idx + 1);
+            }
+            var stepElementSelector = "#"+stepElement.id;
             var stepData = {
                 translate: {},
                 rotate: {},
@@ -453,6 +471,8 @@
             // configuration. This allows for easier "next-to" / "below" defaulting.
             var thisOrPrev = function(transformName, axisName, dataNames, defaultValue) {
                 var value;
+                var stepElement = $(stepElementSelector); // TODO - use root?
+                var data = stepElement.dataset;
                 if ( dataNames == null) {
                     value = findData(data, axisName || transformName);
                 } else {
@@ -480,7 +500,7 @@
                     var inheritFromElement;
                     if ( inheritFromSelector ==='prev') {
                         // inherit from the previous step.
-                        inheritFromElement = getPrevStep(stepElement, true);
+                        inheritFromElement = getPrevStep(stepElement, true, true);
                     }
                     if ( inheritFromSelector ) {
                         inheritFromElement = $(inheritFromSelector, presentationRoot);
@@ -528,9 +548,6 @@
                     'get': thisOrPrev.bind(stepData, 'scale', null, null, 1)
                 }
             });
-            if ( !stepElement.id ) {
-                stepElement.id = "step-" + (idx + 1);
-            }
             
             stepsData["impress-" + stepElement.id] = stepData;
             
@@ -667,7 +684,7 @@
                 if ( veto ) {
                     // leaving this step was vetoed.
                     // make sure that we force the window location back to the correct id.
-                    console.error("Vetoed going to step ", stepElement, "because", veto);
+                    console.error("Vetoed going to step", stepElement, "because", veto);
                     // force back to the original step
                     window.location.hash = lastHash = "#/" +activeStep;
                     return false;
@@ -806,15 +823,13 @@
                 substepBackward(activeStep);
             } else {
                 // when no present substep goto previous step
-                var prev = steps.indexOf(activeStep) - 1;
-                prev = prev >= 0 ? steps[prev] : steps[steps.length - 1];
-                return goto(prev);
+                var prevStep = getPrevStep(activeStep, false, true);
+                return goto(prevStep, {});
             }
         };
-        var getPrevStep = function(currentStep, dontWrap) {
-            debugger;
-            var previousSubstep = getPreviousSubstep(currentStep);
-            if ( previousSubstep ) {
+        var getPrevStep = function(currentStep, dontWrap, skipSubstep) {
+            var previousSubstep;
+            if ( !skipSubstep && (previousSubstep= getPreviousSubstep(currentStep))) {
                 return previousSubstep;
             } else {
                 var prev = steps.indexOf(currentStep) - 1;
@@ -837,8 +852,8 @@
             } else {
                 // when no future substeps are available goto next step
                 var next = steps.indexOf(activeStep) + 1;
-                next = next < steps.length ? steps[next] : steps[0];
-                return goto(next);
+                var nextStep = next < steps.length ? steps[next] : steps[0];
+                return goto(nextStep);
             }
         };
         
