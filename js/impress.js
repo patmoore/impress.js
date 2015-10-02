@@ -636,13 +636,14 @@
         // is given step element with such id is returned, if DOM element is given it is returned
         // if it is a correct step element.
         var getStep = function ( step ) {
+            var stepElement;
             if (typeof step === "number") {
-                step = step < 0 ? steps[ steps.length + step] : steps[ step ];
+                stepElement = step < 0 ? steps[ steps.length + step] : steps[ step ];
             } else if (typeof step === "string") {
                 debugger;
-                step = $(step);
+                stepElement = $(step);
             }
-            return (step && step.id && stepsData["impress-" + step.id]) ? step : null;
+            return (stepElement && stepElement.id && stepsData["impress-" + stepElement.id]) ? stepElement : null;
         };
         
         // used to reset timeout for `impress:stepenter` event
